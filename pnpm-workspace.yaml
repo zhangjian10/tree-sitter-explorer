@@ -1,7 +1,9 @@
 onlyBuiltDependencies:
+  - esbuild
   - tree-sitter-c
-  - tree-sitter-css
+  - tree-sitter-cpp
   - tree-sitter-go
+  - tree-sitter-java
   - tree-sitter-javascript
   - tree-sitter-python
-  - tree-sitter-regex
+  - tree-sitter-typescript
