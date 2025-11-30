@@ -15,7 +15,7 @@ function TreeView({
   terminalSymbolsIsShown,
 }: TreeViewProps) {
   return (
-    <code className="json-view">
+    <code className="flex-1 h-full json-view block min-h-0 overflow-auto">
       <TreeNode
         node={node}
         onClick={onClick}

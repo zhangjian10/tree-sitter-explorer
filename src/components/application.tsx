@@ -40,10 +40,10 @@ function Application() {
       )}
 
       <div className="flex flex-col h-screen">
-        <header className="flex-none h-16 flex items-center px-3 sm:px-4 lg:px-6 shadow">
-          <h1 className="flex-none text-xl font-bold">
+        <header className="flex-none py-2 flex items-center px-3 sm:px-4 lg:px-6 shadow">
+          <h3 className="flex-none text-xl font-bold">
             <a href="/tree-sitter-explorer">Tree-sitter explorer</a>
-          </h1>
+          </h3>
 
           <select
             className="block rounded-md border-0 ring-1 ring-inset ring-gray-300 py-1.5 px-2 ml-4 bg-white"
@@ -60,7 +60,7 @@ function Application() {
           </select>
         </header>
 
-        <main className="grow flex">
+        <main className="grow flex h-full min-h-0">
           <Outlet />
         </main>
       </div>

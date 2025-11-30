@@ -1,38 +1,25 @@
-import { useEffect, useRef, useState } from "react";
-import { parseCode } from "../utils/parse-code";
-import type { IParser } from "../parsers";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useLoaderData } from "react-router-dom";
-import TreeView from "./tree-view";
 import { Node } from "web-tree-sitter";
 import CodeMirror from "@uiw/react-codemirror";
-import type { ReactCodeMirrorRef } from "@uiw/react-codemirror";
+import type { Extension, ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import type { LanguageSupport } from "@codemirror/language";
 import { Compartment } from "@codemirror/state";
 import { vscodeLight } from "@uiw/codemirror-theme-vscode";
-import InputCheckbox from "./input-checkbox";
+
+import { parseCode } from "../utils/parse-code";
+import type { IParser } from "../parsers";
+import TreeView from "./tree-view";
 
 const languageCompartment = new Compartment();
+
 function Parser() {
   const { parser } = useLoaderData() as {
     parser: IParser;
   };
-  const refs = useRef<ReactCodeMirrorRef>({});
+  const codeMirrorRef = useRef<ReactCodeMirrorRef>({});
   const [code, setCode] = useState("");
   const [cst, setCst] = useState<undefined | Node>();
-  const [nodeNameIsShown, setNodeNameIsShown] = useState<boolean>(() => {
-    const nodeNameIsShown = localStorage.getItem("nodeNameIsShown");
-
-    return nodeNameIsShown ? JSON.parse(nodeNameIsShown) : true;
-  });
-  const [terminalSymbolsIsShown, setTerminalSymbolsIsShown] = useState<boolean>(
-    () => {
-      const terminalSymbolsIsShown = localStorage.getItem(
-        "terminalSymbolsIsShown"
-      );
-
-      return terminalSymbolsIsShown ? JSON.parse(terminalSymbolsIsShown) : true;
-    }
-  );
 
   useEffect(() => {
     async function codeToCst(code: string) {
@@ -44,7 +31,6 @@ function Parser() {
     codeToCst(code);
   }, [code, parser.wasmUrl]);
 
-  // Dynamically load language extensions based on current parser
   useEffect(() => {
     async function loadLang() {
       const name = parser?.name?.toLowerCase?.() || "";
@@ -68,7 +54,7 @@ function Parser() {
           case "go": {
             const { go } = await import("@codemirror/lang-go");
             language = go();
-            return;
+            break;
           }
           case "c++":
           case "c": {
@@ -80,7 +66,8 @@ function Parser() {
       } catch {
         // ignore
       }
-      refs.current?.view?.dispatch({
+      langExt.current = languageCompartment.of(language);
+      codeMirrorRef.current?.view?.dispatch({
         effects: languageCompartment.reconfigure(language),
       });
     }
@@ -88,54 +75,37 @@ function Parser() {
     loadLang();
   }, [parser?.name]);
 
-  useEffect(() => {
-    localStorage.setItem("nodeNameIsShown", JSON.stringify(nodeNameIsShown));
-  }, [nodeNameIsShown]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "terminalSymbolsIsShown",
-      JSON.stringify(terminalSymbolsIsShown)
-    );
-  }, [terminalSymbolsIsShown]);
+  useLayoutEffect(() => {}, []);
 
   function treeNodeOnClickHandler(startIndex: number, endIndex: number): void {
-    refs.current?.view?.dispatch({
+    codeMirrorRef.current?.view?.dispatch({
       selection: { anchor: startIndex, head: endIndex },
     });
   }
 
+  const langExt = useRef<Extension>(languageCompartment.of([]));
+
   return (
-    <div className="flex-1 flex items-stretch">
-      <div className="flex-1 p-4 border-r-2 overflow-auto content-container">
+    <div className="flex flex-1 h-full min-h-0">
+      <div className="flex w-1/2 flex-1 px-1 border-r-2 content-container min-h-0 overflow-x-auto">
         <CodeMirror
           value={code}
           onChange={setCode}
-          ref={refs}
-          extensions={[vscodeLight, languageCompartment.of([])]}
+          className="max-h-full max-w-full"
+          height="100%"
+          width="100%"
+          ref={codeMirrorRef}
+          extensions={[vscodeLight, langExt.current]}
         />
       </div>
 
-      <div className="flex-1 p-4 overflow-auto content-container">
-        <div className="mb-2">
-          <InputCheckbox
-            label="Show node name"
-            checked={nodeNameIsShown}
-            onChange={setNodeNameIsShown}
-          />
-          <InputCheckbox
-            label="Show terminal symbols"
-            checked={terminalSymbolsIsShown}
-            onChange={setTerminalSymbolsIsShown}
-          />
-        </div>
-
+      <div className="flex flex-1 px-1 overflow-auto content-container min-h-0">
         {cst ? (
           <TreeView
             node={cst}
             onClick={treeNodeOnClickHandler}
-            nodeNameIsShown={nodeNameIsShown}
-            terminalSymbolsIsShown={terminalSymbolsIsShown}
+            nodeNameIsShown={false}
+            terminalSymbolsIsShown={false}
           />
         ) : (
           ""
