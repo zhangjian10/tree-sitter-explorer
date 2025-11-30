@@ -1,38 +1,38 @@
-import { useEffect, useRef, useState } from 'react';
-import { parseCode } from '../utils/parse-code';
-import type { IParser } from '../parsers';
-import { useLoaderData } from 'react-router-dom';
-import TreeView from './tree-view';
-import { Node } from 'web-tree-sitter';
-import CodeMirror from '@uiw/react-codemirror';
-import type { ReactCodeMirrorRef } from '@uiw/react-codemirror';
-import InputCheckbox from './input-checkbox';
+import { useEffect, useRef, useState } from "react";
+import { parseCode } from "../utils/parse-code";
+import type { IParser } from "../parsers";
+import { useLoaderData } from "react-router-dom";
+import TreeView from "./tree-view";
+import { Node } from "web-tree-sitter";
+import CodeMirror from "@uiw/react-codemirror";
+import type { ReactCodeMirrorRef } from "@uiw/react-codemirror";
+import type { LanguageSupport } from "@codemirror/language";
+import { Compartment } from "@codemirror/state";
+import { vscodeLight } from "@uiw/codemirror-theme-vscode";
+import InputCheckbox from "./input-checkbox";
 
+const languageCompartment = new Compartment();
 function Parser() {
   const { parser } = useLoaderData() as {
     parser: IParser;
   };
   const refs = useRef<ReactCodeMirrorRef>({});
-  const [code, setCode] = useState(parser.initCode);
+  const [code, setCode] = useState("");
   const [cst, setCst] = useState<undefined | Node>();
   const [nodeNameIsShown, setNodeNameIsShown] = useState<boolean>(() => {
-    const nodeNameIsShown = localStorage.getItem('nodeNameIsShown');
+    const nodeNameIsShown = localStorage.getItem("nodeNameIsShown");
 
     return nodeNameIsShown ? JSON.parse(nodeNameIsShown) : true;
   });
   const [terminalSymbolsIsShown, setTerminalSymbolsIsShown] = useState<boolean>(
     () => {
       const terminalSymbolsIsShown = localStorage.getItem(
-        'terminalSymbolsIsShown'
+        "terminalSymbolsIsShown"
       );
 
       return terminalSymbolsIsShown ? JSON.parse(terminalSymbolsIsShown) : true;
     }
   );
-
-  useEffect(() => {
-    setCode(parser.initCode);
-  }, [parser.initCode]);
 
   useEffect(() => {
     async function codeToCst(code: string) {
@@ -44,13 +44,57 @@ function Parser() {
     codeToCst(code);
   }, [code, parser.wasmUrl]);
 
+  // Dynamically load language extensions based on current parser
   useEffect(() => {
-    localStorage.setItem('nodeNameIsShown', JSON.stringify(nodeNameIsShown));
+    async function loadLang() {
+      const name = parser?.name?.toLowerCase?.() || "";
+      const { javascript } = await import("@codemirror/lang-javascript");
+      let language: LanguageSupport = javascript({ jsx: true });
+      try {
+        switch (name) {
+          case "typescript":
+          case "javascript":
+            break;
+          case "java": {
+            const { java } = await import("@codemirror/lang-java");
+            language = java();
+            break;
+          }
+          case "python": {
+            const { python } = await import("@codemirror/lang-python");
+            language = python();
+            break;
+          }
+          case "go": {
+            const { go } = await import("@codemirror/lang-go");
+            language = go();
+            return;
+          }
+          case "c++":
+          case "c": {
+            const { cpp } = await import("@codemirror/lang-cpp");
+            language = cpp();
+            break;
+          }
+        }
+      } catch {
+        // ignore
+      }
+      refs.current?.view?.dispatch({
+        effects: languageCompartment.reconfigure(language),
+      });
+    }
+
+    loadLang();
+  }, [parser?.name]);
+
+  useEffect(() => {
+    localStorage.setItem("nodeNameIsShown", JSON.stringify(nodeNameIsShown));
   }, [nodeNameIsShown]);
 
   useEffect(() => {
     localStorage.setItem(
-      'terminalSymbolsIsShown',
+      "terminalSymbolsIsShown",
       JSON.stringify(terminalSymbolsIsShown)
     );
   }, [terminalSymbolsIsShown]);
@@ -64,7 +108,12 @@ function Parser() {
   return (
     <div className="flex-1 flex items-stretch">
       <div className="flex-1 p-4 border-r-2 overflow-auto content-container">
-        <CodeMirror value={code} onChange={setCode} ref={refs} />
+        <CodeMirror
+          value={code}
+          onChange={setCode}
+          ref={refs}
+          extensions={[vscodeLight, languageCompartment.of([])]}
+        />
       </div>
 
       <div className="flex-1 p-4 overflow-auto content-container">
@@ -89,7 +138,7 @@ function Parser() {
             terminalSymbolsIsShown={terminalSymbolsIsShown}
           />
         ) : (
-          ''
+          ""
         )}
       </div>
     </div>

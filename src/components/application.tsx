@@ -1,16 +1,14 @@
-import { Outlet, useNavigate, useParams } from 'react-router-dom';
-import { parsers } from '../parsers';
-import type { IParser } from '../parsers';
-import { defaultRoute, getParserById } from '../main';
-import { useEffect, useState } from 'react';
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon';
-import GithubIcon from 'mdi-react/GithubIcon';
-import Modal from './modal';
+import { Outlet, useNavigate, useParams } from "react-router-dom";
+import { parsers } from "../parsers";
+import type { IParser } from "../parsers";
+import { defaultRoute, getParserById } from "../utils/router-utils";
+import { useEffect, useState } from "react";
+import Modal from "./modal";
 
 function Application() {
   const navigate = useNavigate();
   const params = useParams();
-  const [parser, setParser] = useState<IParser | undefined>(
+  const [, setParser] = useState<IParser | undefined>(
     getParserById(params.parserId)
   );
   const [modalIsShown, setModalIsShown] = useState(false);
@@ -50,48 +48,16 @@ function Application() {
           <select
             className="block rounded-md border-0 ring-1 ring-inset ring-gray-300 py-1.5 px-2 ml-4 bg-white"
             onChange={(e) => {
-              navigate(`/parser/${e.target.value}`);
+              navigate(`/${e.target.value}`);
             }}
             value={params.parserId}
           >
             {parsers.map((item) => (
               <option value={item.id} key={item.id}>
-                {item.id}
+                {item.name}
               </option>
             ))}
           </select>
-
-          {parser && (
-            <>
-              <a
-                href={parser.homepage}
-                className="ml-4 inline-flex items-center"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Homepage <OpenInNewIcon className="-mt-2" size={10} />
-              </a>
-              <span className="ml-4">Version: {parser.version}</span>
-            </>
-          )}
-
-          <span
-            className="ml-auto cursor-pointer"
-            onClick={(e) => {
-              e.stopPropagation();
-              setModalIsShown(true);
-            }}
-          >
-            About
-          </span>
-          <a
-            href="https://github.com/kaermorchen/tree-sitter-explorer"
-            className="ml-4 inline-flex items-center"
-            title="Tree-sitter explorer"
-          >
-            <GithubIcon className="mr-1" size={20} />
-            GitHub
-          </a>
         </header>
 
         <main className="grow flex">

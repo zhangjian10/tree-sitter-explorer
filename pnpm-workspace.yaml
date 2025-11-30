@@ -1,0 +1,7 @@
+onlyBuiltDependencies:
+  - tree-sitter-c
+  - tree-sitter-css
+  - tree-sitter-go
+  - tree-sitter-javascript
+  - tree-sitter-python
+  - tree-sitter-regex
